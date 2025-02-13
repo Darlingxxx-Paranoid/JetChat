@@ -66,6 +66,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -103,6 +104,8 @@ import com.example.compose.jetchat.R
 import com.example.compose.jetchat.components.JetchatAppBar
 import com.example.compose.jetchat.data.exampleUiState
 import com.example.compose.jetchat.theme.JetchatTheme
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
@@ -565,44 +568,71 @@ fun ImageDialog(
     imageUri: String,
     onDismiss: () -> Unit
 ) {
-    var scale by remember { mutableStateOf(1f) } // 缩放比例
+    var scale by remember { mutableStateOf(1f) }
+    var remainingTime by remember { mutableStateOf(5) } // 添加剩余时间状态
     val scope = rememberCoroutineScope()
 
+    // 倒计时逻辑
+    LaunchedEffect(imageUri) {
+        remainingTime = 5
+        while (remainingTime > 0) {
+            delay(1000L)
+            remainingTime--
+        }
+        onDismiss()
+    }
+
     Dialog(
-        onDismissRequest = onDismiss
+        onDismissRequest = {
+            scope.cancel() // 取消协程
+            onDismiss()
+        }
     ) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .clickable { onDismiss() }
+                .clickable {
+                    scope.cancel()
+                    onDismiss()
+                }
                 .background(Color.Black.copy(alpha = 0.8f))
         ) {
-            AsyncImage(
-                model = Uri.parse(imageUri),
-                contentDescription = stringResource(R.string.attached_image),
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp)
-                    .graphicsLayer(
-                        scaleX = scale,
-                        scaleY = scale
+                    // 倒计时显示
+                    Text(
+                        text = "Closing in $remainingTime seconds",
+                        color = Color.White,
+                        modifier = Modifier
+                            .align(Alignment.TopCenter)
+                            .padding(16.dp),
+                        style = MaterialTheme.typography.titleMedium
                     )
-                    .pointerInput(Unit) {
-                        detectTapGestures(
-                            onDoubleTap = {
-                                // 双击时切换缩放比例
-                                scope.launch {
-                                    scale = if (scale == 1f) 2f else 1f
-                                }
+
+                    AsyncImage(
+                        model = Uri.parse(imageUri),
+                        contentDescription = stringResource(R.string.attached_image),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp)
+                            .graphicsLayer(
+                                scaleX = scale,
+                                scaleY = scale
+                            )
+                            .pointerInput(Unit) {
+                                detectTapGestures(
+                                    onDoubleTap = {
+                                        scope.launch {
+                                            scale = if (scale == 1f) 2f else 1f
+                                        }
+                                    },
+                                    onTap = {
+                                        scope.cancel()
+                                        onDismiss()
+                                    }
+                                )
                             },
-                            onTap={
-                                onDismiss()
-                            }
-                        )
-                    },
-                contentScale = ContentScale.Fit
-            )
-        }
+                        contentScale = ContentScale.Fit
+                    )
+                }
     }
 }
 
