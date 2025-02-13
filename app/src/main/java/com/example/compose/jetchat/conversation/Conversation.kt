@@ -78,6 +78,8 @@ import androidx.compose.ui.draganddrop.DragAndDropEvent
 import androidx.compose.ui.draganddrop.DragAndDropTarget
 import androidx.compose.ui.draganddrop.mimeTypes
 import androidx.compose.ui.draganddrop.toAndroidDragEvent
+import androidx.compose.ui.draw.BlurredEdgeTreatment
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -514,6 +516,7 @@ fun ChatItemBubble(
     onImageClick:(String) -> Unit
 ) {
 
+
     val backgroundBubbleColor = if (isUserMe) {
         MaterialTheme.colorScheme.primary
     } else {
@@ -544,7 +547,12 @@ fun ChatItemBubble(
                     contentDescription = stringResource(R.string.attached_image),
                     modifier = Modifier
                         .size(160.dp)
-                        .clip(RoundedCornerShape(8.dp)),
+                        .clip(RoundedCornerShape(8.dp))
+                        .blur(
+                            radiusX = 12.dp,
+                            radiusY = 12.dp,
+                            edgeTreatment = BlurredEdgeTreatment(RoundedCornerShape(8.dp))
+                        ),
                     contentScale = ContentScale.Crop
                 )
             }
