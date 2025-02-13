@@ -26,6 +26,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.draganddrop.dragAndDropTarget
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -79,7 +80,9 @@ import androidx.compose.ui.draganddrop.mimeTypes
 import androidx.compose.ui.draganddrop.toAndroidDragEvent
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.LastBaseline
 import androidx.compose.ui.platform.LocalDensity
@@ -554,8 +557,11 @@ fun ImageDialog(
     imageUri: String,
     onDismiss: () -> Unit
 ) {
+    var scale by remember { mutableStateOf(1f) } // 缩放比例
+    val scope = rememberCoroutineScope()
+
     Dialog(
-         onDismiss // 确保传递的是 Kotlin 函数
+        onDismissRequest = onDismiss
     ) {
         Box(
             modifier = Modifier
@@ -568,7 +574,24 @@ fun ImageDialog(
                 contentDescription = stringResource(R.string.attached_image),
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(16.dp),
+                    .padding(16.dp)
+                    .graphicsLayer(
+                        scaleX = scale,
+                        scaleY = scale
+                    )
+                    .pointerInput(Unit) {
+                        detectTapGestures(
+                            onDoubleTap = {
+                                // 双击时切换缩放比例
+                                scope.launch {
+                                    scale = if (scale == 1f) 2f else 1f
+                                }
+                            },
+                            onTap={
+                                onDismiss()
+                            }
+                        )
+                    },
                 contentScale = ContentScale.Fit
             )
         }

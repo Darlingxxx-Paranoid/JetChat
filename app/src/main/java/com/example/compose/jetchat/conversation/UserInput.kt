@@ -119,14 +119,9 @@ import kotlinx.coroutines.delay
 
 import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.activity.result.contract.ActivityResultContract
-import androidx.core.os.registerForAllProfilingResults
 import android.net.Uri
-import android.util.Log
-import androidx.activity.result.launch
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.compose.foundation.content.MediaType
 
 enum class InputSelector {
     NONE,
