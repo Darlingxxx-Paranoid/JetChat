@@ -128,6 +128,8 @@ fun ConversationContent(
     modifier: Modifier = Modifier,
     onNavIconPressed: () -> Unit = { }
 ) {
+
+    var burnedImages by remember { mutableStateOf<Set<String>>(setOf()) }
     //图片是否打开
     var showImageDialog by remember { mutableStateOf(false) }
     var selectedImageUri by remember { mutableStateOf<String?>(null) }
@@ -221,9 +223,12 @@ fun ConversationContent(
                 modifier = Modifier.weight(1f),
                 scrollState = scrollState,
                 onImageClick = { imageUri ->
-                    selectedImageUri = imageUri
-                    showImageDialog = true
-                }
+                    if (!burnedImages.contains(imageUri)) { // 只有未焚毁的图片可点击
+                        selectedImageUri = imageUri
+                        showImageDialog = true
+                    }
+                },
+                burnedImages = burnedImages // 传递状态
             )
             UserInput(
                 onMessageSent = { content ->
@@ -248,7 +253,11 @@ fun ConversationContent(
     if (showImageDialog && selectedImageUri != null) {
         ImageDialog(
             imageUri = selectedImageUri!!,
-            onDismiss = { showImageDialog = false }
+            onDismiss = {
+                // 关闭时标记为已焚毁
+                burnedImages = burnedImages + selectedImageUri!!
+                showImageDialog = false
+            }
         )
     }
 }
@@ -318,6 +327,7 @@ fun Messages(
     navigateToProfile: (String) -> Unit,
     scrollState: LazyListState,
     modifier: Modifier = Modifier,
+    burnedImages: Set<String>,
     onImageClick: (String) -> Unit
 ) {
     val scope = rememberCoroutineScope()
@@ -356,7 +366,8 @@ fun Messages(
                         isUserMe = content.author == authorMe,
                         isFirstMessageByAuthor = isFirstMessageByAuthor,
                         isLastMessageByAuthor = isLastMessageByAuthor,
-                        onImageClick=onImageClick
+                        onImageClick=onImageClick,
+                        burnedImages = burnedImages,
                     )
                 }
             }
@@ -396,7 +407,8 @@ fun Message(
     isUserMe: Boolean,
     isFirstMessageByAuthor: Boolean,
     isLastMessageByAuthor: Boolean,
-    onImageClick: (String) -> Unit
+    onImageClick: (String) -> Unit,
+    burnedImages: Set<String>,
 ) {
     val borderColor = if (isUserMe) {
         MaterialTheme.colorScheme.primary
@@ -434,6 +446,7 @@ fun Message(
             modifier = Modifier
                 .padding(end = 16.dp)
                 .weight(1f),
+            burnedImages=burnedImages,
             onImageClick=onImageClick
         )
     }
@@ -447,13 +460,14 @@ fun AuthorAndTextMessage(
     isLastMessageByAuthor: Boolean,
     authorClicked: (String) -> Unit,
     modifier: Modifier = Modifier,
-    onImageClick: (String) -> Unit
+    onImageClick: (String) -> Unit,
+    burnedImages: Set<String>
 ) {
     Column(modifier = modifier) {
         if (isLastMessageByAuthor) {
             AuthorNameTimestamp(msg)
         }
-        ChatItemBubble(msg, isUserMe, authorClicked = authorClicked,onImageClick=onImageClick)
+        ChatItemBubble(msg, isUserMe, authorClicked = authorClicked,onImageClick=onImageClick,burnedImages=burnedImages)
         if (isFirstMessageByAuthor) {
             // Last bubble before next author
             Spacer(modifier = Modifier.height(8.dp))
@@ -520,7 +534,8 @@ fun ChatItemBubble(
     message: Message,
     isUserMe: Boolean,
     authorClicked: (String) -> Unit,
-    onImageClick:(String) -> Unit
+    onImageClick:(String) -> Unit,
+    burnedImages: Set<String>,
 ) {
 
 
@@ -549,19 +564,31 @@ fun ChatItemBubble(
                 shape = ChatBubbleShape,
                 modifier = Modifier.clickable { onImageClick(message.image) }
             ) {
-                AsyncImage(
-                    model = Uri.parse(message.image),
-                    contentDescription = stringResource(R.string.attached_image),
-                    modifier = Modifier
-                        .size(160.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .blur(
-                            radiusX = 12.dp,
-                            radiusY = 12.dp,
-                            edgeTreatment = BlurredEdgeTreatment(RoundedCornerShape(8.dp))
-                        ),
-                    contentScale = ContentScale.Crop
-                )
+                if (burnedImages.contains(message.image)) {
+                    Image(
+                        painter = painterResource(R.drawable.burned_image),
+                        contentDescription = "1",
+                        modifier = Modifier
+                            .size(160.dp)
+                            .clip(RoundedCornerShape(8.dp)),
+                        contentScale = ContentScale.Crop
+                    )
+                }else {
+                    AsyncImage(
+                        model = Uri.parse(message.image),
+                        contentDescription = stringResource(R.string.attached_image),
+                        modifier = Modifier
+                            .size(160.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .blur(
+                                radiusX = 12.dp,
+                                radiusY = 12.dp,
+                                edgeTreatment = BlurredEdgeTreatment(RoundedCornerShape(8.dp))
+                            ),
+                        contentScale = ContentScale.Crop
+                    )
+                }
+
             }
         }
     }
