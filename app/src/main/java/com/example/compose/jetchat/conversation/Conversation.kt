@@ -18,8 +18,10 @@
 
 package com.example.compose.jetchat.conversation
 
+import android.app.Activity
 import android.content.ClipDescription
 import android.net.Uri
+import android.view.WindowManager
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -66,6 +68,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -88,6 +91,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.LastBaseline
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.testTag
@@ -571,6 +575,18 @@ fun ImageDialog(
     var scale by remember { mutableStateOf(1f) }
     var remainingTime by remember { mutableStateOf(5) } // 添加剩余时间状态
     val scope = rememberCoroutineScope()
+
+    val context = LocalContext.current
+    // 设置 FLAG_SECURE 防止截图
+    DisposableEffect(Unit) {
+        val window = (context as Activity).window
+        window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+
+        onDispose {
+            // 在对话框关闭时移除 FLAG_SECURE
+            window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        }
+    }
 
     // 倒计时逻辑
     LaunchedEffect(imageUri) {
