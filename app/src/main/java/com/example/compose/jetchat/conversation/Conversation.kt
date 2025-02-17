@@ -583,7 +583,7 @@ fun ChatItemBubble(
                             .blur(
                                 radiusX = 12.dp,
                                 radiusY = 12.dp,
-                                edgeTreatment = BlurredEdgeTreatment(RoundedCornerShape(8.dp))
+                                    edgeTreatment = BlurredEdgeTreatment(RoundedCornerShape(8.dp))
                             ),
                         contentScale = ContentScale.Crop
                     )
@@ -607,7 +607,7 @@ fun ImageDialog(
     // 设置 FLAG_SECURE 防止截图
     DisposableEffect(Unit) {
         val window = (context as Activity).window
-        window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+          window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
 
         onDispose {
             // 在对话框关闭时移除 FLAG_SECURE
